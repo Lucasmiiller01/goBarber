@@ -5,7 +5,8 @@ import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
 import pt from 'date-fns/locale/pt';
 import * as Yup from 'yup';
 import Notification from '../schemas/Notification';
-import Mail from '../../lib/Mail';
+import CancellationMain from '../jobs/CancellationMail';
+import Queue from '../../lib/Queue';
 class AppointmentController {
   async index(req, res) {
     const appointments = await Appointment.findAll({
@@ -57,21 +58,9 @@ class AppointmentController {
     appointment.canceled_at = new Date();
 
     await appointment.save();
-
-    await Mail.sendMail({
-      to: `${appointment.provider.name} <${appointment.provider.email}>`,
-      template: 'cancellation',
-      context: {
-        provider: appointment.provider.name,
-        user: appointment.user.name,
-        date: format(appointment.date, "'dia' dd 'de' MMMMM', às' H:mm'h'", {
-          locale: pt,
-        }),
-      },
-      subject: 'Agendamento Cancelado',
-      text: 'Você tem um novo cancelamento',
+    await Queue.add(CancellationMain.key, {
+      appointment,
     });
-
     return res.json(appointment);
   }
   async store(req, res) {
