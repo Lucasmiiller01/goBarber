@@ -22,6 +22,8 @@ routes.post('/users', UserController.store);
 
 routes.post('/appointments', AppointmentController.store);
 
+routes.get('/appointments', AppointmentController.index);
+
 routes.get('/providers', ProviderController.index);
 
 routes.put('/users', UserController.update);
